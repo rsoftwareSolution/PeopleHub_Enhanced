@@ -1,0 +1,105 @@
+@if (!auth.isLoggedIn()) {
+  <main class="login-shell">
+    <section class="brand-panel">
+      <div class="brand"><span class="logo">PH</span><span>PeopleHub</span></div>
+      <div class="hero-copy">
+        <span class="eyebrow light">MICROSERVICES DEMO PLATFORM</span>
+        <h1>People operations,<br><em>beautifully connected.</em></h1>
+        <p>One polished workspace to demonstrate JWT security, role-based access, CRUD APIs, MySQL data and Employee-to-Department RestClient integration.</p>
+        <div class="hero-flow"><span>Angular UI</span><b>→</b><span>Employee :8081</span><b>→</b><span>Department :8082</span></div>
+      </div>
+      <div class="security-note"><span class="shield">✓</span><div><b>End-to-end secured</b><small>One JWT, independently validated by both services</small></div></div>
+    </section>
+    <section class="login-panel">
+      <form class="login-card" [formGroup]="loginForm" (ngSubmit)="login()">
+        <span class="eyebrow">WELCOME BACK</span><h2>Sign in to the demo</h2><p>Use a prepared role to explore authorization behavior.</p>
+        <label>Username<input formControlName="username" placeholder="admin or user"></label>
+        <label>Password<input type="password" formControlName="password" placeholder="Enter password"></label>
+        <button class="btn primary full" [disabled]="busy() || loginForm.invalid">{{ busy() ? 'Signing in...' : 'Sign in securely' }}</button>
+        <div class="demo-users">
+          <button type="button" (click)="loginForm.setValue({username:'admin', password:'admin123'})"><b>ADMIN</b><span>admin / admin123</span><small>Full CRUD access</small></button>
+          <button type="button" (click)="loginForm.setValue({username:'user', password:'user123'})"><b>USER</b><span>user / user123</span><small>Read-only access</small></button>
+        </div>
+      </form>
+    </section>
+  </main>
+} @else {
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand dark"><span class="logo">PH</span><span>PeopleHub</span></div>
+      <nav>
+        <button [class.active]="view()==='dashboard'" (click)="setView('dashboard')"><span>⌂</span>Overview</button>
+        <button [class.active]="view()==='employees'" (click)="setView('employees')"><span>♙</span>Employees</button>
+        <button [class.active]="view()==='departments'" (click)="setView('departments')"><span>▦</span>Departments</button>
+        <button [class.active]="view()==='integration'" (click)="setView('integration')"><span>⇄</span>Integration demo</button>
+      </nav>
+      <div class="service-health"><p>SERVICE STATUS</p><div><i></i>Employee Service <small>:8081</small></div><div><i></i>Department Service <small>:8082</small></div></div>
+      <div class="user-box"><div class="avatar">{{ auth.role()==='ADMIN' ? 'AD' : 'US' }}</div><div><b>{{ auth.role() }}</b><small>{{ auth.isAdmin() ? 'Full access' : 'Read only' }}</small></div><button title="Sign out" (click)="logout()">↗</button></div>
+    </aside>
+    <main class="workspace">
+      <header><div><span class="eyebrow">UNIFIED PEOPLE PLATFORM</span><h1>{{ view()==='dashboard' ? 'Good day, ' + (auth.isAdmin() ? 'Administrator' : 'User') : view()==='employees' ? 'Employee directory' : view()==='departments' ? 'Department directory' : 'Service integration lab' }}</h1></div><div class="header-actions"><span class="role-pill" [class.user]="!auth.isAdmin()">{{ auth.role() }}</span><button class="icon-btn" (click)="loadAll()" title="Refresh">↻</button></div></header>
+
+      @if (notice()) { <div class="toast" [class.error]="notice()?.type==='error'"><b>{{ notice()?.type==='success' ? '✓' : '!' }}</b>{{ notice()?.text }}</div> }
+      @if (loading()) { <div class="loading-bar"></div> }
+
+      @if (view()==='dashboard') {
+        <section class="stat-grid">
+          <article class="stat lavender"><div><span>Total employees</span><strong>{{ employees().length }}</strong><small>Across {{ departments().length }} departments</small></div><b>♙</b></article>
+          <article class="stat mint"><div><span>Departments</span><strong>{{ departments().length }}</strong><small>Independent service</small></div><b>▦</b></article>
+          <article class="stat peach"><div><span>Current access</span><strong>{{ auth.role() }}</strong><small>{{ auth.isAdmin() ? 'Read and write' : 'Read-only operations' }}</small></div><b>⌾</b></article>
+        </section>
+        <section class="analytics-grid">
+          <article class="panel chart-panel">
+            <div class="panel-head"><div><span class="eyebrow">WORKFORCE ANALYTICS</span><h2>Employees by department</h2></div><span class="tag">Live data</span></div>
+            <div class="chart-content">
+              <div class="donut-chart" [style.background]="donutGradient()"><div class="donut-hole"><strong>{{ employees().length }}</strong><small>Employees</small></div></div>
+              <div class="chart-legend">
+                @for (d of departments(); track d.id; let i = $index) {
+                  <div><i [style.background]="['#255b46','#8cbf9b','#d6b36b','#9c8ac8','#d58b76','#6e9fb4'][i % 6]"></i><span>{{ d.name }}</span><b>{{ employeeCount(d.id) }}</b></div>
+                } @empty { <p class="empty">Add departments to see workforce distribution.</p> }
+              </div>
+            </div>
+          </article>
+          <article class="panel insight-panel">
+            <span class="eyebrow">PEOPLE SNAPSHOT</span><h2>At a glance</h2>
+            <div class="insight-row"><span>Average employees / department</span><b>{{ departments().length ? (employees().length / departments().length | number:'1.1-1') : '0.0' }}</b></div>
+            <div class="insight-row"><span>Departments with no employees</span><b>{{ emptyDepartmentCount() }}</b></div>
+            <div class="insight-row"><span>Departments with employees</span><b>{{ activeDepartmentCount() }}</b></div>
+          </article>
+        </section>
+        <section class="two-col">
+          <article class="panel"><div class="panel-head"><div><span class="eyebrow">PEOPLE</span><h2>Recently loaded employees</h2></div><button class="text-btn" (click)="setView('employees')">View all →</button></div>
+            @for (e of employees().slice(0,5); track e.id) { <div class="list-row"><div class="avatar color">{{ initials(e.name) }}</div><div><b>{{ e.name }}</b><small>{{ e.email }}</small></div><span>{{ deptName(e.departmentId) }}</span></div> } @empty { <div class="empty">No employees yet. Create one with an ADMIN token.</div> }
+          </article>
+          <article class="panel flow-panel"><div class="panel-head"><div><span class="eyebrow">LIVE ARCHITECTURE</span><h2>How this UI talks to your APIs</h2></div></div>
+            <div class="mini-flow"><div><b>Angular</b><small>Bearer JWT</small></div><i>→</i><div><b>Employee</b><small>Port 8081</small></div><i>→</i><div><b>Department</b><small>Port 8082</small></div></div>
+            <p>The interceptor automatically adds your token. Each Spring Boot service validates it before the controller executes.</p><button class="btn secondary" (click)="setView('integration')">Run integration demo</button>
+          </article>
+        </section>
+      }
+
+      @if (view()==='employees') {
+        <section class="toolbar"><div class="search"><span>⌕</span><input placeholder="Search employees..." (input)="employeeSearch.set($any($event.target).value)"></div><button class="btn primary" [disabled]="!auth.isAdmin()" (click)="openEmployee()">+ Add employee</button></section>
+        @if (!auth.isAdmin()) { <div class="info-banner">You are signed in as USER. GET operations are enabled; create, update and delete are intentionally disabled.</div> }
+        <section class="table-card"><table><thead><tr><th>Employee</th><th>Department</th><th>ID</th><th>Actions</th></tr></thead><tbody>
+          @for (e of filteredEmployees(); track e.id) { <tr><td><div class="person"><div class="avatar color">{{ initials(e.name) }}</div><div><b>{{ e.name }}</b><small>{{ e.email }}</small></div></div></td><td><span class="tag">{{ deptName(e.departmentId) }}</span></td><td>#{{ e.id }}</td><td><button class="row-btn" [disabled]="!auth.isAdmin()" (click)="openEmployee(e)">Edit</button><button class="row-btn danger" [disabled]="!auth.isAdmin()" (click)="removeEmployee(e)">Delete</button></td></tr> }
+        </tbody></table></section>
+      }
+
+      @if (view()==='departments') {
+        <section class="toolbar"><div class="search"><span>⌕</span><input placeholder="Search departments..." (input)="departmentSearch.set($any($event.target).value)"></div><button class="btn primary" [disabled]="!auth.isAdmin()" (click)="openDepartment()">+ Add department</button></section>
+        <section class="card-grid">@for (d of filteredDepartments(); track d.id) { <article class="department-card"><div class="dept-icon">{{ initials(d.name) }}</div><div><span class="tag">ID #{{ d.id }}</span><h3>{{ d.name }}</h3><p>⌖ {{ d.location }}</p><small>{{ employeeCount(d.id) }} linked employee(s)</small></div><div class="card-actions"><button [disabled]="!auth.isAdmin()" (click)="openDepartment(d)">Edit</button><button [disabled]="!auth.isAdmin()" (click)="removeDepartment(d)">Delete</button></div></article> } @empty { <div class="empty panel">No departments available.</div> }</section>
+      }
+
+      @if (view()==='integration') {
+        <section class="integration-grid"><article class="panel demo-panel"><span class="eyebrow">STAR DEMO SCENARIO</span><h2>Fetch a department through Employee Service</h2><p>This calls <code>GET :8081/api/employees/department/{{ '{id}' }}</code>. Employee Service forwards the same JWT to Department Service using RestClient.</p>
+          <form [formGroup]="lookupForm" (ngSubmit)="runLookup()"><label>Department ID<input type="number" min="1" formControlName="departmentId"></label><button class="btn primary" [disabled]="busy() || lookupForm.invalid">{{ busy() ? 'Calling services...' : 'Run end-to-end call' }}</button></form>
+          @if (lookupResult()) { <div class="result-card"><span>200 OK</span><pre>{{ lookupResult() | json }}</pre></div> }
+        </article><article class="panel"><span class="eyebrow">REQUEST JOURNEY</span><h2>JWT propagation</h2><div class="vertical-flow"><div><b>1</b><span><strong>Angular interceptor</strong><small>Adds Authorization: Bearer JWT</small></span></div><div><b>2</b><span><strong>Employee JwtFilter</strong><small>Validates signature, expiry and role</small></span></div><div><b>3</b><span><strong>DepartmentClient</strong><small>Forwards the same header via RestClient</small></span></div><div><b>4</b><span><strong>Department JwtFilter</strong><small>Independently validates the token</small></span></div><div><b>5</b><span><strong>Department API</strong><small>Returns JSON from its MySQL database</small></span></div></div></article></section>
+      }
+    </main>
+  </div>
+
+  @if (showEmployeeModal()) { <div class="modal-backdrop" (click)="showEmployeeModal.set(false)"><form class="modal" [formGroup]="employeeForm" (ngSubmit)="saveEmployee()" (click)="$event.stopPropagation()"><div class="modal-head"><div><span class="eyebrow">EMPLOYEE</span><h2>{{ editingEmployeeId() ? 'Update employee' : 'Create employee' }}</h2></div><button type="button" (click)="showEmployeeModal.set(false)">×</button></div><label>Full name<input formControlName="name" placeholder="Anita Patil"></label><label>Email<input formControlName="email" type="email" placeholder="anita@example.com"></label><label>Department<select formControlName="departmentId">@for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }} · {{ d.location }}</option> }</select></label><button class="btn primary full" [disabled]="busy() || employeeForm.invalid">Save employee</button></form></div> }
+  @if (showDepartmentModal()) { <div class="modal-backdrop" (click)="showDepartmentModal.set(false)"><form class="modal" [formGroup]="departmentForm" (ngSubmit)="saveDepartment()" (click)="$event.stopPropagation()"><div class="modal-head"><div><span class="eyebrow">DEPARTMENT</span><h2>{{ editingDepartmentId() ? 'Update department' : 'Create department' }}</h2></div><button type="button" (click)="showDepartmentModal.set(false)">×</button></div><label>Department name<input formControlName="name" placeholder="Engineering"></label><label>Location<input formControlName="location" placeholder="Pune"></label><button class="btn primary full" [disabled]="busy() || departmentForm.invalid">Save department</button></form></div> }
+}

@@ -1,0 +1,11 @@
+# Reference only. Set the equivalent environment variables before starting either service.
+# Employee Service: DB_URL=jdbc:mysql://localhost:3306/employee_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+# Department Service: DB_URL=jdbc:mysql://localhost:3306/department_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/REPLACE_WITH_SERVICE_DATABASE?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+app:
+  jwt:
+    secret: ${JWT_SECRET}

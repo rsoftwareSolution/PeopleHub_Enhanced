@@ -1,0 +1,304 @@
+openapi: 3.0.3
+
+info:
+  title: Department Service API
+  description: JWT-secured CRUD API for department management
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8082
+    description: Local Department Service
+
+tags:
+  - name: Authentication
+    description: JWT token generation
+  - name: Departments
+    description: Department CRUD operations
+
+paths:
+
+  /auth/token:
+    post:
+      tags:
+        - Authentication
+      summary: Generate JWT token
+      description: Validates demo credentials and returns a Bearer token.
+      operationId: generateToken
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              admin:
+                summary: ADMIN login
+                value:
+                  username: admin
+                  password: admin123
+              user:
+                summary: USER login
+                value:
+                  username: user
+                  password: user123
+
+      responses:
+        '200':
+          description: JWT generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+
+        '401':
+          description: Invalid credentials
+
+  /api/departments:
+    get:
+      tags:
+        - Departments
+      summary: List all departments
+      operationId: listDepartments
+
+      security:
+        - bearerAuth: []
+
+      responses:
+        '200':
+          description: Departments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Department'
+
+        '401':
+          description: Missing, invalid, or expired JWT
+
+        '403':
+          description: Unsupported role
+
+    post:
+      tags:
+        - Departments
+      summary: Create a department
+      description: Requires the ADMIN role.
+      operationId: createDepartment
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentRequest'
+            example:
+              name: Engineering
+              location: Pune
+
+      responses:
+        '201':
+          description: Department created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+
+        '400':
+          description: Invalid department request
+
+        '401':
+          description: Missing, invalid, or expired JWT
+
+        '403':
+          description: ADMIN role required
+
+  /api/departments/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Department identifier
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+
+    get:
+      tags:
+        - Departments
+      summary: Get department by ID
+      operationId: getDepartmentById
+
+      security:
+        - bearerAuth: []
+
+      responses:
+        '200':
+          description: Department retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+
+        '401':
+          description: Missing, invalid, or expired JWT
+
+        '403':
+          description: Unsupported role
+
+        '404':
+          description: Department not found
+
+    put:
+      tags:
+        - Departments
+      summary: Update a department
+      description: Requires the ADMIN role.
+      operationId: updateDepartment
+
+      security:
+        - bearerAuth: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentRequest'
+            example:
+              name: Platform Engineering
+              location: Pune
+
+      responses:
+        '200':
+          description: Department updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+
+        '400':
+          description: Invalid department request
+
+        '401':
+          description: Missing, invalid, or expired JWT
+
+        '403':
+          description: ADMIN role required
+
+        '404':
+          description: Department not found
+
+    delete:
+      tags:
+        - Departments
+      summary: Delete a department
+      description: Requires the ADMIN role.
+      operationId: deleteDepartment
+
+      security:
+        - bearerAuth: []
+
+      responses:
+        '204':
+          description: Department deleted successfully
+
+        '401':
+          description: Missing, invalid, or expired JWT
+
+        '403':
+          description: ADMIN role required
+
+        '404':
+          description: Department not found
+
+
+  /api/departments/search:
+    get:
+      tags: [Departments]
+      summary: Search and page departments
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: sort, in: query, schema: { type: string, example: "name,asc" } }
+      responses:
+        '200': { description: Paged department results }
+        '400': { description: Invalid pagination or sort parameters }
+
+  /api/departments/with-employee-counts:
+    get:
+      tags: [Departments]
+      summary: List all departments with employee counts
+      description: Aggregates employee counts from Employee Service; includes departments with zero employees.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Department summaries with employee counts }
+        '502': { description: Employee Service unavailable }
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter the JWT returned by POST /auth/token
+
+  schemas:
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: admin
+        password:
+          type: string
+          format: password
+          example: admin123
+
+    TokenResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+      properties:
+        accessToken:
+          type: string
+          description: Signed JWT
+        tokenType:
+          type: string
+          example: Bearer
+
+    DepartmentRequest:
+      type: object
+      required:
+        - name
+        - location
+      properties:
+        name:
+          type: string
+          example: Engineering
+        location:
+          type: string
+          example: Pune
+
+    Department:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+              example: 10
+        - $ref: '#/components/schemas/DepartmentRequest'

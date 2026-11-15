@@ -1,0 +1,475 @@
+openapi: 3.0.3
+
+info:
+  title: Employee Service API
+  description: JWT-secured CRUD API for employee management and department lookup.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8081
+    description: Local Employee Service
+
+tags:
+  - name: Authentication
+    description: JWT token generation
+  - name: Employees
+    description: Employee CRUD operations
+  - name: Employee Department
+    description: Department lookup through the Employee Service
+
+paths:
+  /auth/token:
+    post:
+      tags:
+        - Authentication
+      summary: Generate a JWT token
+      description: Validates demonstration credentials and returns a Bearer token.
+      operationId: generateEmployeeServiceToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              admin:
+                summary: ADMIN login
+                value:
+                  username: admin
+                  password: admin123
+              user:
+                summary: USER login
+                value:
+                  username: user
+                  password: user123
+      responses:
+        '200':
+          description: JWT generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/employees:
+    get:
+      tags:
+        - Employees
+      summary: List all employees
+      operationId: listEmployees
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Employees retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+        '401':
+          description: Missing, invalid, or expired JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Unsupported role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Employees
+      summary: Create an employee
+      description: Creates an employee. Requires the ADMIN role.
+      operationId: createEmployee
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+            example:
+              name: Anita
+              email: anita@example.com
+              departmentId: 10
+      responses:
+        '201':
+          description: Employee created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          description: Invalid employee request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing, invalid, or expired JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: ADMIN role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/employees/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Employee identifier
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+
+    get:
+      tags:
+        - Employees
+      summary: Get an employee by ID
+      operationId: getEmployeeById
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Employee retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '401':
+          description: Missing, invalid, or expired JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Unsupported role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Employees
+      summary: Update an employee
+      description: Updates an existing employee. Requires the ADMIN role.
+      operationId: updateEmployee
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployeeRequest'
+            example:
+              name: Anita Sharma
+              email: anita.sharma@example.com
+              departmentId: 10
+      responses:
+        '200':
+          description: Employee updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          description: Invalid employee request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing, invalid, or expired JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: ADMIN role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Employees
+      summary: Delete an employee
+      description: Deletes an employee. Requires the ADMIN role.
+      operationId: deleteEmployee
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Employee deleted successfully
+        '401':
+          description: Missing, invalid, or expired JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: ADMIN role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/employees/department/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Department identifier
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+
+    get:
+      tags:
+        - Employee Department
+      summary: Get department details through Employee Service
+      description: >-
+        Employee Service forwards the same Authorization header to Department
+        Service and returns the department response. Both USER and ADMIN can
+        access this GET operation.
+      operationId: getDepartmentThroughEmployeeService
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Department retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+        '401':
+          description: Missing, invalid, or expired JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Unsupported role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Department not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '502':
+          description: Department Service returned an invalid downstream response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Department Service is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /api/employees/search:
+    get:
+      tags: [Employees]
+      summary: Search and page employees
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: departmentId, in: query, schema: { type: integer } }
+        - { name: page, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { name: sort, in: query, schema: { type: string, example: "name,asc" } }
+      responses:
+        '200': { description: Paged employee results }
+        '400': { description: Invalid pagination or sort parameters }
+
+  /api/employees/department/{id}/employees:
+    get:
+      tags: [Employee Department]
+      summary: List employees assigned to a department
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Department employee list }
+
+  /api/employees/department/{id}/count:
+    get:
+      tags: [Employee Department]
+      summary: Count employees in a department, including zero
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Department employee count }
+
+  /api/employees/department/{id}/details:
+    get:
+      tags: [Employee Department]
+      summary: Return department data with its employees and count
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Department and employee details }
+
+  /api/employees/department-counts:
+    get:
+      tags: [Employee Department]
+      summary: Aggregate employee counts by department
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Department count aggregation }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter the access token returned by POST /auth/token.
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: admin
+        password:
+          type: string
+          format: password
+          example: admin123
+
+    TokenResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+      properties:
+        accessToken:
+          type: string
+          description: Signed JWT access token
+          example: eyJhbGciOiJIUzI1NiJ9.example.signature
+        tokenType:
+          type: string
+          example: Bearer
+
+    EmployeeRequest:
+      type: object
+      required:
+        - name
+        - email
+        - departmentId
+      properties:
+        name:
+          type: string
+          example: Anita
+        email:
+          type: string
+          format: email
+          example: anita@example.com
+        departmentId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 10
+
+    Employee:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+              example: 1
+        - $ref: '#/components/schemas/EmployeeRequest'
+
+    Department:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        name:
+          type: string
+          example: Engineering
+        location:
+          type: string
+          example: Pune
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          example: 401
+        error:
+          type: string
+          example: Unauthorized
+        message:
+          type: string
+          example: Invalid or expired JWT
+        path:
+          type: string
+          example: /api/employees

@@ -1,0 +1,17 @@
+# Java / Maven
+**/target/
+**/.idea/
+*.iml
+*.log
+
+# Angular / Node
+**/node_modules/
+**/dist/
+**/out-tsc/
+**/.angular/
+npm-debug.log*
+
+# Local secrets
+.env
+.env.*
+!.env.example

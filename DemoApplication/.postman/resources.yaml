@@ -1,0 +1,10 @@
+# Use this workspace to collaborate
+workspace:
+  id: ""
+
+localResources:
+  specs:
+    - ../employee-service/src/main/resources/swagger/employee-api.yaml
+    - ../department-service/src/main/resources/swagger/department-api.yaml
+    - ../employee-service/target/classes/swagger/employee-api.yaml
+    - ../department-service/target/classes/swagger/department-api.yaml
