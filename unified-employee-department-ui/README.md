@@ -17,10 +17,9 @@ Edit the `window.__PEOPLEHUB_CONFIG__` object in `src/index.html` before buildin
 
 ## Run
 ```bash
-fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression
-npm ci
-npm run build
 npm start
+fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression
+
 ```
 Open `http://localhost:4200`.
 
