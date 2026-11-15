@@ -37,7 +37,7 @@ public class DepartmentController {
     }
 
     @GetMapping(Constants.ID)
-    public Department one(@PathVariable Integer id) {
+    public Department one(@PathVariable("id") Integer id) {
         return service.findById(id);
     }
 
@@ -48,14 +48,14 @@ public class DepartmentController {
     }
 
     @PutMapping(Constants.ID)
-    public Department update(@PathVariable Integer id, @Valid @RequestBody Department item) {
+    public Department update(@PathVariable("id") Integer id, @Valid @RequestBody Department item) {
 
         return service.update(id, item);
     }
 
     @DeleteMapping(Constants.ID)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Integer id, @RequestHeader(Constants.AUTHORIZATION) String token) {
+    public void delete(@PathVariable("id") Integer id, @RequestHeader(Constants.AUTHORIZATION) String token) {
         service.findById(id);
         long employeeCount = employeeClient.employeeCount(id, token);
 
