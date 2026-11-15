@@ -1,5 +1,6 @@
 package com.demo.department.client;
 
+import com.demo.department.config.Constants;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
@@ -23,7 +24,7 @@ public class EmployeeClient {
         try {
             Map<String, Object> response = client.get()
                     .uri("/api/employees/department/{id}/count", departmentId)
-                    .header("Authorization", authorization).retrieve().body(Map.class);
+                    .header(Constants.AUTHORIZATION, authorization).retrieve().body(Map.class);
             if (response == null || !(response.get("employeeCount") instanceof Number count)) {
                 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Employee service returned an invalid count response.");
             }
@@ -38,7 +39,7 @@ public class EmployeeClient {
     public List<Map<String, Object>> departmentCounts(String authorization) {
         try {
             List<Map<String, Object>> response = client.get().uri("/api/employees/department-counts")
-                    .header("Authorization", authorization).retrieve().body(List.class);
+                    .header(Constants.AUTHORIZATION, authorization).retrieve().body(List.class);
             return response == null ? List.of() : response;
         } catch (HttpClientErrorException ex) {
             throw new ResponseStatusException(ex.getStatusCode(), "Downstream service rejected the request.", ex);
