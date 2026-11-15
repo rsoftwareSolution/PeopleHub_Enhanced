@@ -4,7 +4,8 @@ import {
   DestroyRef,
   computed,
   inject,
-  signal
+  signal,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -50,6 +51,7 @@ type Notice = {
     CommonModule,
     ReactiveFormsModule
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './app.component.html'
 })
 export class AppComponent {
